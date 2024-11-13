@@ -4,6 +4,7 @@
 
 library(gRain)
 library(gRbase)
+library(Rgraphviz)
 
 # Define States for Each Node
 # Each node (concept) in our Bayesian Network will have three possible states: "not understood", "partially understood", and "well understood".
@@ -43,6 +44,10 @@ plist <- compileCPT(list(cpt_solar_energy, cpt_atmospheric_circulation, cpt_evap
 # Compile the Bayesian Network
 bn <- grain(plist)
 
+# Visualize the Network
+plot(bn)
+
+
 # Querying the Network
 # Set evidence: Let's assume Solar Energy is 'well understood'
 bn <- setEvidence(bn, nodes = "SolarEnergy", states = "well understood")
@@ -50,8 +55,7 @@ bn <- setEvidence(bn, nodes = "SolarEnergy", states = "well understood")
 # Query the conditional probability of Evaporation
 querygrain(bn, nodes = "Evaporation")
 
-# Visualize the Network
-plot(bn)
+
 
 # Save the Bayesian Network to a File
 # Save the network in a format that can be read by the bnlearn package
