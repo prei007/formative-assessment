@@ -9,13 +9,28 @@ Demonstrator of formative assessment using AI and Bayesian Networks
 4. The score, the comment, and the Learner Model go to the teacher.
 
 ## Early demonstrator
+*Note:* This is functional, not a mockup. But very basic. 
 
-### The learner model
-
+### The learner model structure
 Using the water cycle domain for illustration, a simple model involving just five concepts looks like so:
 
 <img src="media/water_cycle_dag.png" alt="Sample Image" width="400"/>
 
+The model is a probabilistic one, meaning that the arrows are used to update probabilities according to the direction of the arrows based on new information on a student's performance. 
+
 ### Teacher UI
 
 <img src="media/shiny-ui-1.png" alt="Sample Image" width="600"/>
+
+Student answers are sent to chatGPT for scoring and verbal feedback. Example:
+
+**Student answer:** Solar energy is super important for the water cycle because it heats up the water in oceans, lakes, and rivers, making it evaporate into the air. This forms water vapor, which rises and cools down to create clouds. Without the sun, there wouldn’t be enough energy to make the water move around. I think the sun also helps with condensation because it warms the clouds, but I’m not entirely sure. Also, solar energy might make the wind blow, which pushes clouds around. So, the sun kind of powers everything in the water cycle, from evaporation to moving water around in the air
+
+**chatGPT:** The student demonstrates some understanding of the role of solar energy in the water cycle, such as causing evaporation and potentially influencing wind patterns. However, there are some inaccuracies and gaps in understanding, such as the mention of condensation being caused by the sun warming clouds. Encourage the student to further clarify and expand on their understanding of how solar energy drives the water cycle. Score: partially_understood. 
+
+
+### Learner model update
+Using the score returned by chatGPT, the priors in the Learner Model get updated. For this, the program scans the teacher question for a concept matching a node in the Learner Model and then updates this and the connected nodes in the model. In the example above, this would the relation `SolarEnergy —> Evaporation`. The likelihood that Evaporation is understood by the student is updated based on the conditional probabilities provided when setting up the Learner Model. 
+
+<img src="media/shiny-ui-2.png" alt="Sample Image" width="600"/>
+
