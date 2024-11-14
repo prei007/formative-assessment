@@ -41,7 +41,7 @@ Using the score returned by chatGPT, the priors in the Learner Model get updated
 
 ### Next steps
 1. Make learner model persistent (store and retrieve from a database)
-2. Visualise (updates of) the learner model in the UI
+2. Visualise (updates to) the learner model in the UI
 3. Generalise model-updating to multiple nodes (multiple facets of students' knowledge) based on a single input.
 4. Improve UI 
 
