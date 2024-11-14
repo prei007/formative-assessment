@@ -16,7 +16,7 @@ Using the water cycle domain for illustration, a simple model involving just fiv
 
 <img src="media/water_cycle_dag.png" alt="Sample Image" width="400"/>
 
-The model is a probabilistic one, meaning that the arrows are used to update probabilities according to the direction of the arrows based on new information on a student's performance. 
+The model is a probabilistic one, meaning that the arrows are used to update probabilities according to the direction of the arrows based on new information on a student's performance. For details, see the "Network" part of [the app](https://github.com/prei007/formative-assessment/blob/main/water_cycle/app.R)
 
 ### Teacher UI
 
