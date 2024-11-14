@@ -1,5 +1,4 @@
-# formative-assessment
-Demonstrator of formative assessment using AI and Bayesian Networks
+# Formative assessment using AI and Bayesian Networks
 
 ## Main idea
 
