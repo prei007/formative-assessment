@@ -44,6 +44,8 @@ Using the score returned by chatGPT, the priors in the Learner Model get updated
 
 ### Software used
 
+The app can be run within RStudio and will be rendered in a web browser. A valid openai key is required and needs to be provided by as the value of `openai_api_key` in the console. 
+
 * RStudio as the development environment
 * R and the packages
     * grain - for Bayesian Network modelling
