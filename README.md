@@ -30,7 +30,17 @@ Student answers are sent to chatGPT for scoring and verbal feedback. Example:
 
 
 ### Learner model update
-Using the score returned by chatGPT, the priors in the Learner Model get updated. For this, the program scans the teacher question for a concept matching a node in the Learner Model and then updates this and the connected nodes in the model. In the example above, this would the relation `SolarEnergy —> Evaporation`. The likelihood that Evaporation is understood by the student is updated based on the conditional probabilities provided when setting up the Learner Model. 
+*Note:* This is functional, but not part of the web app yet. The model output goes to the console at the moment. 
+
+Using the score returned by chatGPT, the priors in the Learner Model get updated. For this, the program scans the teacher question for a concept matching a node in the Learner Model and then updates this and the connected nodes in the model. In the example above, this would be the relation `SolarEnergy —> Evaporation`. The likelihood that Evaporation is understood by the student is updated based on the conditional probabilities provided when setting up the Learner Model. 
 
 <img src="media/shiny-ui-2.png" alt="Sample Image" width="600"/>
 
+### Software used
+
+* RStudio as the development environment
+* R and the packages
+    * bnlearn - for Bayesian Network modelling
+    * openai - for communicating with chatGPT
+    * Shiny - for creating the web app
+    
