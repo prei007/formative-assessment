@@ -5,11 +5,12 @@
 library(gRain)
 library(gRbase)
 library(Rgraphviz)
+library(igraph)
 
 # Define States for Each Node
 # Each node (concept) in our Bayesian Network will have three possible states: "not understood", "partially understood", and "well understood".
 
-states <- c("not understood", "partially understood", "well understood")
+states <- c("not_understood", "partially_understood", "well_understood")
 
 # Defining the Root Nodes (Solar Energy and Atmospheric Circulation)
 # Root nodes are independent of other nodes, so we define them with unconditional probability tables.
@@ -60,6 +61,5 @@ querygrain(bn, nodes = "Evaporation")
 # Save the Bayesian Network to a File
 # Save the network in a format that can be read by the bnlearn package
 saveRDS(bn, file = "water_cycle.rds")
-
 
 
