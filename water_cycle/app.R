@@ -3,9 +3,11 @@
 
 library(gRain)
 library(gRbase)
-library(Rgraphviz)
+# library(Rgraphviz)
 library(shiny)
 library(openai)
+# library(igraph)
+library(visNetwork)
 
 ##########################
 # Network creation
@@ -49,7 +51,7 @@ plist <- compileCPT(list(cpt_solar_energy, cpt_atmospheric_circulation, cpt_evap
 # Compile the Bayesian Network
 bn <- grain(plist)
 
-# showing values
+# show values in console
 print("priors:")
 print(querygrain(bn, nodes = c("SolarEnergy", "Evaporation")))
 
@@ -77,7 +79,8 @@ ui <- fluidPage(
       h4("Feedback:"),
       verbatimTextOutput("feedback"),
       h4("Score:"),
-      verbatimTextOutput("score")
+      verbatimTextOutput("score"),
+      plotOutput("dag_graph")
     )
   )
 )
@@ -136,16 +139,20 @@ server <- function(input, output) {
       bn <<- setEvidence(bn, nodes = matching_node, states = score)
     }
 
-    # showing values
+    # show values in console
     print("updated values:")
     print(querygrain(bn, nodes = c("SolarEnergy", "Evaporation")))
 
     # Display the feedback and score
     output$feedback <- renderText({ feedback_text })
     output$score <- renderText({ score })
-  })
-}
 
+    #Display the bn
+    output$dag_graph <- renderPlot( { plot(bn$dag) } )
+    })
+
+
+}
 
 
 # Run the Shiny App
