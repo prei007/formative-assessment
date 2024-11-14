@@ -49,7 +49,7 @@ Using the score returned by chatGPT, the priors in the Learner Model get updated
 
 * RStudio as the development environment
 * R and the packages
-    * bnlearn - for Bayesian Network modelling
+    * grain - for Bayesian Network modelling
     * openai - for communicating with chatGPT
     * Shiny - for creating the web app
     
