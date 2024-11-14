@@ -12,7 +12,7 @@ Motivation:
 * This process includes the teacher "in the loop" (4), which, at least for school education, is necessary because teachers tend to know their students and how to talk to them.
 * Bayesian learner modelling (3) is a technique for information integration under uncertainty that  aligns with methods developed in educational measurement and assessment ([Almond et al, 2015](https://link.springer.com/book/10.1007/978-1-4939-2125-6)). Formative assessment is more than just feedback provision: Bayesian updating is the formally optimal way for decision-making under uncertainty. Teachers can add information to the model and change its structure. 
  
-## Early demonstrator
+## (Very) Early demonstrator
 *Note:* While a web app, some of the output goes to the developer console at this early development stage. 
 
 ### The learner model structure
