@@ -5,8 +5,12 @@ Demonstrator of formative assessment using AI and Bayesian Networks
 
 1. Student provides a long answer/short essay to a teacher question. 
 2. The answer gets scored by chatGPT along with a verbal feedback aligned with the score. 
-3. The score gets used to update a Learner Model, formally a Bayesian Network. 
+3. The score gets used to update a learner model, formally a Bayesian Network. 
 4. The score, the comment, and the Learner Model go to the teacher.
+
+This process includes the teacher "in the loop" (4), which, at least for school education, is necessary because teachers tend to know their students and how to talk to them. Step (3) refers to a technique and tool for information integration under uncertainty that  aligns with methods developed in educational measurement and assessment 
+([Almond et al, 2015](https://link.springer.com/book/10.1007/978-1-4939-2125-6)). The method contributes to making formative assessment mean more than just providing feedback. Bayesian updating is the formally optimal way for decision making under uncertainty. 
+ 
 
 ## Early demonstrator
 *Note:* This is functional, not a mockup. But very basic. 
