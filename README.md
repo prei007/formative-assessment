@@ -16,4 +16,6 @@ Using the water cycle domain for illustration, a simple model involving just fiv
 
 <img src="media/water_cycle_dag.png" alt="Sample Image" width="400"/>
 
+### Teacher UI
 
+<img src="media/shiny-ui-1.png" alt="Sample Image" width="600"/>
