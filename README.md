@@ -19,6 +19,8 @@ Motivation:
 
 <img src="media/inspectable-bn.png" alt="Sample Image" width="600"/>
 
+Source: [Zapata-Rivera, 2004](http://portal.acm.org/citation.cfm?id=1434859)
+
 ### The learner model structure
 Using the water cycle domain for illustration, a simple model involving just five concepts looks like the network shown in the screenshot below.
 The model is a probabilistic one, meaning that the arrows are used to update probabilities according to the direction of the arrows based on new information on a student's performance. For details, see the "Network" part of [the app](https://github.com/prei007/formative-assessment/blob/main/water_cycle/app.R). 
