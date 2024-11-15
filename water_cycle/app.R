@@ -9,55 +9,9 @@ library(openai)
 # library(igraph)
 library(visNetwork)
 
-##########################
-# Network creation
-##########################
-
-# Define States for Each Node
-# Each node (concept) in our Bayesian Network will have three possible states: "not understood", "partially understood", and "well understood".
-
-states <- c("not_understood", "partially_understood", "well_understood")
-
-# Defining the Root Nodes (Solar Energy and Atmospheric Circulation)
-# Root nodes are independent of other nodes, so we define them with unconditional probability tables.
-
-cpt_solar_energy <- cptable(~SolarEnergy, values = c(0.3, 0.4, 0.3), levels = states)
-cpt_atmospheric_circulation <- cptable(~AtmosphericCirculation, values = c(0.2, 0.5, 0.3), levels = states)
-
-# Defining Intermediate Nodes
-# Intermediate nodes have dependencies. Here, Evaporation depends on Solar Energy.
-
-cpt_evaporation <- cptable(~Evaporation | SolarEnergy, values = c(0.6, 0.3, 0.1, 0.2, 0.5, 0.3, 0.1, 0.4, 0.5), levels = states)
-
-# Condensation depends on Evaporation and Atmospheric Circulation
-cpt_condensation <- cptable(~Condensation | Evaporation:AtmosphericCirculation,
-                            values = c(0.5, 0.3, 0.2,
-                                       0.3, 0.4, 0.3,
-                                       0.1, 0.4, 0.5,
-                                       0.3, 0.4, 0.3,
-                                       0.2, 0.5, 0.3,
-                                       0.1, 0.3, 0.6,
-                                       0.2, 0.5, 0.3,
-                                       0.3, 0.3, 0.4,
-                                       0.1, 0.3, 0.6),
-                            levels = states)
-
-# Precipitation depends on Condensation
-cpt_precipitation <- cptable(~Precipitation | Condensation, values = c(0.2, 0.5, 0.3, 0.1, 0.4, 0.5, 0.1, 0.3, 0.6), levels = states)
-
-# Convert CPTs into Probability Tables
-plist <- compileCPT(list(cpt_solar_energy, cpt_atmospheric_circulation, cpt_evaporation, cpt_condensation, cpt_precipitation))
-
-# Compile the Bayesian Network
-bn <- grain(plist)
-
-# show values in console
-print("priors:")
-print(querygrain(bn, nodes = c("SolarEnergy", "Evaporation")))
-
 
 ##########################
-# Shiny
+# Shiny app for maintaining a learner model
 ##########################
 
 # strings for testing  the app
@@ -65,6 +19,12 @@ print(querygrain(bn, nodes = c("SolarEnergy", "Evaporation")))
 teacher_question1 <-"Explain the role of solar energy for the water cycle in about 100 words."
 student_answer1 <- "Solar energy is super important for the water cycle because it heats up the water in oceans, lakes, and rivers, making it evaporate into the air. This forms water vapor, which rises and cools down to create clouds. Without the sun, there wouldn’t be enough energy to make the water move around. I think the sun also helps with condensation because it warms the clouds, but I’m not entirely sure. Also, solar energy might make the wind blow, which pushes clouds around. So, the sun kind of powers everything in the water cycle, from evaporation to moving water around in the air."
 student_answer2 <- "Solar energy is the driving force of the water cycle. It provides the heat necessary for evaporation, where water from oceans, lakes, and other surfaces turns into water vapor. This vapor rises into the atmosphere, cools, and condenses into clouds, a process independent of direct solar heating. Solar energy also causes differential heating of the Earth’s surface, creating winds that help transport moisture. Once the clouds become saturated, precipitation occurs, returning water to the surface. In summary, solar energy powers evaporation, drives atmospheric circulation, and sustains the continuous movement of water through the cycle."
+
+# read in the model
+
+bn <<- readRDS("models/water_cycle.rds")
+print("Model read from models/water_cycle.rds")
+
 
 # Shiny App to Collect Teacher Question and Student Answer
 ui <- fluidPage(
@@ -147,10 +107,13 @@ server <- function(input, output) {
     output$feedback <- renderText({ feedback_text })
     output$score <- renderText({ score })
 
-    #Display the bn
+    #D isplay the bn
     output$dag_graph <- renderPlot( { plot(bn$dag) } )
     })
 
+   # save the model to file
+   saveRDS(bn, file = "models/water_cycle.rds")
+   print("Model saved to models/water_cycle.rds")
 
 }
 
