@@ -1,0 +1,285 @@
+---
+title: "The gRain package"
+output: html_notebook
+---
+
+### Installation
+
+See <https://people.math.aau.dk/~sorenh/software/gR/#Packages> and for explanations of the chest example see https://www.norsys.com/tutorials/netica/secA/tut_A2.htm. 
+
+
+```{r eval=FALSE, include=FALSE}
+# Run only once, if/when needed! 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("graph")
+BiocManager::install("Rgraphviz")
+BiocManager::install("RBGL") # added because needed it seems PR
+```
+
+Required packages:
+
+```{r include=FALSE}
+library(graph)
+library(Rgraphviz)
+library(RBGL)
+library(gRbase)
+library(gRain)
+```
+
+# The Chest Clinic example
+
+Lauritzen and Spiegelhalter (1988) motivate the chest clinic example with the following narrative:
+
+“Shortness–of–breath (dyspnoea) may be due to tuberculosis, lung cancer or bronchitis, or none of them, or more than one of them. A recent visit to Asia increases the chances of tuberculosis, while smoking is known to be a risk factor for both lung cancer and bronchitis. The results of a single chest X–ray do not discriminate between lung cancer and tuberculosis, as neither does the presence or absence of dyspnoea.”
+
+![](AsiaBN.jpg)
+
+-   Dyspnoea is the presented symptom.
+-   Diagnosis can be
+    -   tuberculosis, lung cancer or bronchitis,
+    -   or a combination of them,
+    -   or none of them.
+-   Tuberculosis is made more likely if a recent visit to Asia.
+-   Lung cancer and bronchitis are more likley in smokers
+-   A chest X-ray does not discriminate between lung cancer and TB
+-   Dysponea does not discriminate between lung cancer and TB.
+
+To diagnose a patient, values could be entered for some of nodes when they are known. This would allow us to re-calculate the probabilities for all the other nodes. Thus if we take a chest x-ray and the x-ray is abnormal, then the chances of the patient having TB or lung-cancer rise. If we further learn that our patient visited Asia, then the chances that they have tuberculosis would rise further, and of lung-cancer would drop (since the X-ray is now better explained by the presence of TB than of lung-cancer). We will see how this is done in a later section.
+
+For more see e.g. <https://www.norsys.com/tutorials/netica/secA/tut_A1.htm#WhatIsABayesNet>
+
+## Specifying the network
+
+### Step 1: CPTs
+
+One way to do this is by specifying Conditional Probability Tables (CPTs):
+
+```{r}
+yn <- c("yes", "no")
+a <- cptable(~asia, values=c(1, 99), levels=yn)
+t.a <- cptable(~tub|asia, values=c(5, 95, 1, 99), levels=yn)
+s <- cptable(~smoke, values=c(5, 5), levels=yn)
+l.s <- cptable(~lung|smoke, values=c(1, 9, 1, 99), levels=yn)
+b.s <- cptable(~bronc|smoke, values=c(6, 4, 3, 7), levels=yn)
+e.lt <- cptable(~either|lung:tub, values=c(1, 0, 1, 0, 1, 0, 0, 1), levels=yn)
+x.e <- cptable(~xray|either, values=c(98, 2, 5, 95), levels=c("Abnormal", "Normal"))
+d.be <- cptable(~dysp|bronc:either, values=c(9, 1, 7, 3, 8, 2, 1, 9), levels=yn)
+```
+
+### Step 2: Compilation
+
+Then compile the individual CPTs into a list
+
+```{r}
+chest_cpt <- compileCPT(a, t.a, s, l.s, b.s, e.lt, x.e, d.be)
+chest_cpt
+```
+
+The components are arrays:
+
+```{r}
+chest_cpt$tub
+```
+
+Coercing into a datatable is sometimes easier to read:
+
+```{r}
+chest_cpt$tub  |> as.data.frame.table()
+# using the pipe operator
+```
+
+Note that `either` is what's called a logical node:
+
+```{r}
+chest_cpt$either  |> as.data.frame.table()
+```
+
+### Step 3: Creating the BN
+
+```{r}
+chest_bn <- grain(chest_cpt) 
+chest_bn
+# the plot command may need to be run twice in interactive use
+plot(chest_bn)
+```
+
+## Setting evidence and querying the BN
+
+### Before adding evidence
+
+Marginal probabilities is default:
+
+```{r}
+querygrain(chest_bn, nodes=c("lung", "bronc"), type="marginal")
+```
+
+We see from the baseline that bronchitis is much more frequent than lung cancer.
+
+Joint probabilities on demand:
+
+```{r}
+querygrain(chest_bn, nodes=c("lung", "bronc"), type="joint")
+```
+
+```{r}
+querygrain(chest_bn, nodes=c("either", "xray", "dysp"), type="marginal")
+```
+
+### Adding evidence
+
+Evidence can be entered in various ways, here's one:
+
+```{r}
+chest_ev  <- setEvidence(chest_bn,
+                evidence=list(asia="yes", dysp="yes"))
+# display the evidence as a table:
+getEvidence(chest_ev) |> as.data.frame()
+```
+
+Let's see the effect this has on the probs for the diagnosis lung cancer and bronchitis:
+
+```{r}
+qgrain(chest_ev, nodes=c("lung", "bronc"))
+```
+
+Bronchitis became much more likely.
+
+We can also turn this around and ask how likely this evidence is (in absolute terms) under the model, kind of the evidence's base rate:
+
+```{r}
+pEvidence(chest_ev)
+```
+
+So, thats about 5 in thousand.
+
+### More examples for updates with evidence
+
+https://www.norsys.com/tutorials/netica/secA/tut_A3.htm 
+
+#### Observing Dyspnonea
+
+```{r}
+dysp_ev <- setEvidence(chest_bn,
+  evidence=list( dysp="yes"))
+# getFinding(dysp_ev)
+```
+
+Before and after the observation: 
+```{r}
+qgrain(chest_bn, nodes=c("lung", "bronc"))
+qgrain(dysp_ev, nodes=c("lung", "bronc"))
+```
+#### Observing X-ray abnormal
+
+```{r}
+xRay_ev <- setEvidence(chest_bn,
+  evidence=list(xray="Abnormal"))
+```
+
+Before and after the observation: 
+```{r}
+qgrain(chest_bn, nodes=c("lung", "bronc"))
+qgrain(xRay_ev, nodes=c("lung", "bronc"))
+```
+xray being abnormal has increased the probability of lung cancer to 48.9%, i.e., from 5 out of hundred to 50 out of hundred. 
+
+```{r}
+getEvidence(xRay_ev)
+```
+```{r}
+retractEvidence(xRay_ev, nodes = "xray")
+```
+```{r}
+getEvidence(xRay_ev)
+```
+
+
+#### Explaining away
+If we now here that she's been to Asia recently, the probability of cancer decreases to 37.1%  because a part of it is explained away by an increase of the chance to TB.
+
+```{r}
+xRay_Asia_ev <- setEvidence(xRay_ev,
+  evidence=list(asia="yes"))
+qgrain(xRay_ev, nodes=c("lung", "bronc"))
+qgrain(xRay_Asia_ev, nodes=c("lung", "bronc"))
+```
+The general pattern for "explaining away" is as follows: 
+
+![](explain-away.jpg)
+
+Before we have any evidence for C, A and B are independent. That is, changing one has no affect on the other. But as soon as we have evidence for C, any change in the probability of A has an opposite change in B and vice versa. They are competing explanations of C. This is because if we acquire evidence of A, then that explains away C, and the chances of B are diminished. This is an important feature of good causal reasoning. It follows naturally from the laws of Bayesian statistics.
+
+For serial blocking and divergent blocking see https://www.norsys.com/tutorials/netica/secA/tut_A3.htm
+
+## Soft Evidence
+
+A smaller net:
+
+```{r}
+yn <- c("yes", "no")
+a    <- cpt(~asia, values=c(1, 99), levels=yn)
+t.a  <- cpt(~tub|asia, values=c(5, 95, 1, 99), levels=yn)
+plist1 <- compileCPT(list(a, t.a)) 
+chest1 <- grain(plist1)
+querygrain(chest1, simplify = TRUE)
+```
+
+### Hard evidence
+
+```{r}
+setEvidence(chest1, evidence=list(asia="yes"))
+```
+
+### Virtual (aka soft) evidence
+
+We don't have to extend the network by an additional node, but add the non-binary evidence directly, with `asia=c(.8, .1)`: 
+
+```{r}
+chest1_ve <- chest1 |> setEvidence(evidence=list(asia=c(.8, .1)))
+chest1_ve |> querygrain(simplify = TRUE)
+```
+The evidence is now 'soft': 
+
+```{r}
+getEvidence(chest1_ve, short=FALSE)
+```
+
+```{r}
+querygrain(chest1, evidence=list(asia=c(1, 0)), simplify=T)
+```
+
+# Building networks from data
+
+```{r}
+dG <- dag(~A:B + B:C, result="igraph") 
+uG <- ug(~A:B + B:C, result="igraph") 
+par(mfrow=c(1,2)); plot( dG ); plot( uG )
+```
+Data:
+
+```{r}
+dat <- tabNew(c("A", "B", "C"), 
+              levels=c("lev1", "lev2"), #levels=c(2,2,2), 
+              values=c(0, 0, 2, 3, 1, 2, 1, 4))
+class(dat)
+```
+
+Network from data: 
+
+```{r}
+gr.dG <- compile(grain( dG, data=dat ))
+gr.uG <- compile(grain( uG, data=dat ))
+```
+
+Extracting information 
+
+```{r}
+extractCPT(dat, dG) |> c()
+```
+
+```{r}
+extractPOT(dat, uG) |> c()
+```
+
