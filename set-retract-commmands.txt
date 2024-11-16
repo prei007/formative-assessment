@@ -1,0 +1,17 @@
+example("grain")
+chest_bn <- grain(compileCPT(chest_cpt))
+
+bn2 <- chest_bn |> evidence_add(list(asia="yes", xray="yes"))
+bn3 <- chest_bn |> evidence_add(list(asia=c(0.8, 0.1), xray="yes"))
+
+bn2 |> evidence_get()
+bn3 |> evidence_get()
+
+bn2 |> evidence_prob()
+bn3 |> evidence_prob()
+
+bn2 |> evidence_drop("xray")
+bn3 |> evidence_drop("xray")
+
+bn2 |> evidence_drop("xray") |> evidence_get()
+bn3 |> evidence_drop("xray") |> evidence_get()
