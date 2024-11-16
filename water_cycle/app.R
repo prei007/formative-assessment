@@ -24,6 +24,8 @@ student_answer2 <- "Solar energy is the driving force of the water cycle. It pro
 
 bn <<- readRDS("models/water_cycle.rds")
 print("Model read from models/water_cycle.rds")
+print("priors:")
+print(querygrain(bn, nodes = c("Evaporation")))
 
 
 # Shiny App to Collect Teacher Question and Student Answer
@@ -33,6 +35,9 @@ ui <- fluidPage(
     sidebarPanel(
       textInput("teacher_question", "Teacher Question:", teacher_question1),
       textAreaInput("student_answer", "Student's Answer:", student_answer1, rows = 5),
+      selectInput("answer_quality", "answer quality",
+                  choices = c("poor", "medium", "good")
+                  )),
       actionButton("evaluate", "Evaluate Answer")
     ),
     mainPanel(
@@ -43,79 +48,102 @@ ui <- fluidPage(
       plotOutput("dag_graph")
     )
   )
-)
+
 
 server <- function(input, output) {
-  observeEvent(input$evaluate, {
-    # Using OpenAI API to evaluate the student's answer
-    question <- input$teacher_question
-    answer <- input$student_answer
+  observeEvent(
+    input$evaluate,
+    {
+      # Using OpenAI API to evaluate the student's answer
+      question <- input$teacher_question
+      answer <- input$student_answer
 
-    # Make a request to OpenAI API for evaluation
-    openai_api_key <- Sys.getenv("OPENAI_API_KEY")
+      # Make a request to OpenAI API for evaluation
+      openai_api_key <- Sys.getenv("OPENAI_API_KEY")
 
-    msgText <- paste("Teacher Question:", question, "\nStudent Answer:", answer, "\nEvaluate the correctness of the student's answer. Provide a qualitative score as one of: not_understood, partially_understood, or fully_understood. Provide short text feedback aligned with the score.")
+      msgText <- paste(
+        "Teacher Question:",
+        question,
+        "\nStudent Answer:",
+        answer,
+        "\nEvaluate the correctness of the student's answer. Provide a qualitative score as one of: not_understood, partially_understood, or fully_understood. Provide short text feedback aligned with the score."
+      )
 
+      # For dev purposes we don't need the actual call.
 
-    response <- openai::create_chat_completion(
-      model = "gpt-3.5-turbo",
-      messages = list(list(role = "user", content = msgText))
-    )
+      # print("calling chatgpt")
+      # response <- openai::create_chat_completion(
+      #   model = "gpt-3.5-turbo",
+      #   messages = list(list(role = "user", content = msgText)))
 
-    # Extract feedback and score from response
+      # Instead, we fake it:
 
-    feedback_text <- as.character(response$choices[[5]])
-    score <- ifelse(
-      grepl("not_understood", feedback_text, ignore.case = TRUE),
-      "not_understood",
-      ifelse(
-        grepl("partially_understood", feedback_text, ignore.case = TRUE),
-        "partially_understood",
-        "well_understood"
+      feedback_text <- ifelse(
+       input$answer_quality == "poor" , "Neque porro quisquam est qui .. not understood .. dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.",
+        ifelse(input$answer_quality == "medium", "Donec nisi justo, partially understood volutpat lobortis augue sed, fermentum mattis ex", "Vestibulum fully understood eget condimentum ipsum. Ut mattis nunc at "
       )
     )
 
-    # Mapping questions to nodes
-    question_node_mapping <- list(
-      "solar energy" = "SolarEnergy",
-      "atmospheric circulation" = "AtmosphericCirculation",
-      "evaporation" = "Evaporation",
-      "condensation" = "Condensation",
-      "precipitation" = "Precipitation"
-      # Add more mappings as needed
-    )
+      # Extract feedback and score from response
+      # Next line needs to be uncommented for processing reponse from ccpt
+     # feedback_text <- as.character(response$choices[[5]])
+      score <- ifelse(
+        grepl("not understood", feedback_text, ignore.case = TRUE),
+        "not_understood",
+        ifelse(
+          grepl("partially understood", feedback_text, ignore.case = TRUE),
+          "partially_understood",
+          "well_understood"
+        )
+      )
 
-    # Determine which node to update
-    matching_node <- NULL
-    for (keyword in names(question_node_mapping)) {
-      if (grepl(keyword, question, ignore.case = TRUE)) {
-        matching_node <- question_node_mapping[[keyword]]
-        break
+      # Mapping questions to nodes
+      question_node_mapping <- list(
+        "solar energy" = "SolarEnergy",
+        "atmospheric circulation" = "AtmosphericCirculation",
+        "evaporation" = "Evaporation",
+        "condensation" = "Condensation",
+        "precipitation" = "Precipitation"
+        # Add more mappings as needed
+      )
+
+      # Determine which node to update
+      matching_node <- NULL
+      for (keyword in names(question_node_mapping)) {
+        if (grepl(keyword, question, ignore.case = TRUE)) {
+          matching_node <- question_node_mapping[[keyword]]
+          break
+        }
+      }
+
+      # Update Bayesian Network with the score
+      if (!is.null(matching_node)) {
+        bn <<- setEvidence(bn, nodes = matching_node, states = score)
+        # save the model to file
+        cat("Score from chatGPT: ", score, "\n")
+        saveRDS(bn, file = "models/water_cycle.rds")
+        print("Model saved to models/water_cycle.rds")
+        # show values in console
+        print("updated values:")
+        print(querygrain(bn, nodes = c("Evaporation")))
+
+        # Display the feedback and score
+        output$feedback <- renderText({
+          feedback_text
+        })
+        output$score <- renderText({
+          score
+        })
+
+        #D isplay the bn
+        output$dag_graph <- renderPlot({
+          plot(bn$dag)
+        })
       }
     }
+  )
+  }
 
-    # Update Bayesian Network with the score
-    if (!is.null(matching_node)) {
-      bn <<- setEvidence(bn, nodes = matching_node, states = score)
-    }
-
-    # show values in console
-    print("updated values:")
-    print(querygrain(bn, nodes = c("SolarEnergy", "Evaporation")))
-
-    # Display the feedback and score
-    output$feedback <- renderText({ feedback_text })
-    output$score <- renderText({ score })
-
-    #D isplay the bn
-    output$dag_graph <- renderPlot( { plot(bn$dag) } )
-    })
-
-   # save the model to file
-   saveRDS(bn, file = "models/water_cycle.rds")
-   print("Model saved to models/water_cycle.rds")
-
-}
 
 
 # Run the Shiny App
