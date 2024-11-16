@@ -7,6 +7,10 @@ library(gRbase)
 library(Rgraphviz)
 library(igraph)
 
+# *****************************************
+# Setting up the model
+# *****************************************
+
 # Define States for Each Node
 # Each node (concept) in our Bayesian Network will have three possible states: "not understood", "partially understood", and "well understood".
 
@@ -45,17 +49,31 @@ plist <- compileCPT(list(cpt_solar_energy, cpt_atmospheric_circulation, cpt_evap
 # Compile the Bayesian Network
 bn <- grain(plist)
 
+
+# *****************************************
+# Using the model
+# *****************************************
+
 # Visualize the Network
 plot(bn)
 
 
 # Querying the Network
-# Set evidence: Let's assume Solar Energy is 'well understood'
-bn <- setEvidence(bn, nodes = "SolarEnergy", states = "well understood")
+## Initial values for two nodes
+querygrain(bn, nodes = c("Evaporation", "Condensation"))
+# Set evidences
+# Step 1: works as expected
+bn <- setEvidence(bn, nodes = "SolarEnergy", states = "not_understood")
+# Step 2: No effects, which is not what should happen.
+bn <- setEvidence(bn, nodes = "SolarEnergy", states = "partially_understood")
+# Step 3: Works as expected for Condensation, but weirdly Evaporation is now NULL
+bn <- setEvidence(bn, nodes = "Evaporation", states = "well_understood")
+bn <- setEvidence(bn, nodes = "SolarEnergy", states = "well_understood")
 
 # Query the conditional probability of Evaporation
+querygrain(bn, nodes = c("Evaporation", "Condensation"))
+querygrain(bn, nodes = c("SolarEnergy", "Evaporation", "Condensation"))
 querygrain(bn, nodes = "Evaporation")
-
 
 
 # Save the Bayesian Network to a File
