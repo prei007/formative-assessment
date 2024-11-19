@@ -34,7 +34,6 @@ Lauritzen and Spiegelhalter (1988) motivate the chest clinic example with the fo
 
 “Shortness–of–breath (dyspnoea) may be due to tuberculosis, lung cancer or bronchitis, or none of them, or more than one of them. A recent visit to Asia increases the chances of tuberculosis, while smoking is known to be a risk factor for both lung cancer and bronchitis. The results of a single chest X–ray do not discriminate between lung cancer and tuberculosis, as neither does the presence or absence of dyspnoea.”
 
-![](AsiaBN.jpg)
 
 -   Dyspnoea is the presented symptom.
 -   Diagnosis can be
@@ -102,7 +101,8 @@ chest_cpt$either  |> as.data.frame.table()
 chest_bn <- grain(chest_cpt) 
 chest_bn
 # the plot command may need to be run twice in interactive use
-plot(chest_bn)
+# the dag is an igraph object that prints nicer. 
+plot(chest_bn$dag)
 ```
 
 ## Setting evidence and querying the BN
@@ -154,6 +154,32 @@ pEvidence(chest_ev)
 
 So, thats about 5 in thousand.
 
+Let's save chest_ev to a file 
+
+```{r}
+saveRDS(chest_ev, file = "chest_ev.rds")
+```
+
+Now retract one evidence
+
+```{r}
+chest_ev_r <- retractEvidence(chest_ev, nodes = "dysp")
+getEvidence(chest_ev_r)
+```
+Let's do this with chest_ev itself: 
+
+```{r}
+chest_ev <- retractEvidence(chest_ev, nodes = "dysp")
+getEvidence(chest_ev)
+```
+Let's reload the saved model with the two evidences:
+
+```{r}
+chest_ev <- bn <<- readRDS("chest_ev.rds")
+getEvidence(chest_ev)
+```
+
+
 ### More examples for updates with evidence
 
 https://www.norsys.com/tutorials/netica/secA/tut_A3.htm 
@@ -188,9 +214,12 @@ xray being abnormal has increased the probability of lung cancer to 48.9%, i.e.,
 ```{r}
 getEvidence(xRay_ev)
 ```
+
+
 ```{r}
-retractEvidence(xRay_ev, nodes = "xray")
+xRah_ev <- retractEvidence(xRay_ev, nodes = "xray")
 ```
+
 ```{r}
 getEvidence(xRay_ev)
 ```
@@ -207,7 +236,6 @@ qgrain(xRay_Asia_ev, nodes=c("lung", "bronc"))
 ```
 The general pattern for "explaining away" is as follows: 
 
-![](explain-away.jpg)
 
 Before we have any evidence for C, A and B are independent. That is, changing one has no affect on the other. But as soon as we have evidence for C, any change in the probability of A has an opposite change in B and vice versa. They are competing explanations of C. This is because if we acquire evidence of A, then that explains away C, and the chances of B are diminished. This is an important feature of good causal reasoning. It follows naturally from the laws of Bayesian statistics.
 
@@ -278,6 +306,7 @@ Extracting information
 ```{r}
 extractCPT(dat, dG) |> c()
 ```
+
 
 ```{r}
 extractPOT(dat, uG) |> c()
