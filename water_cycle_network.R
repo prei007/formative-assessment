@@ -20,7 +20,7 @@ states <- c("not_understood", "partially_understood", "well_understood")
 # Root nodes are independent of other nodes, so we define them with unconditional probability tables.
 
 cpt_solar_energy <- cptable(~SolarEnergy, values = c(0.3, 0.4, 0.3), levels = states)
-cpt_atmospheric_circulation <- cptable(~AtmosphericCirculation, values = c(0.2, 0.5, 0.3), levels = states)
+cpt_atmospheric_circulation <- cptable(~AtmosphericCirculation, values = c(0.5, 0.3, 0.2), levels = states)
 
 # Defining Intermediate Nodes
 # Intermediate nodes have dependencies. Here, Evaporation depends on Solar Energy.
@@ -48,23 +48,61 @@ plist <- compileCPT(list(cpt_solar_energy, cpt_atmospheric_circulation, cpt_evap
 
 # Compile the Bayesian Network
 bn <- grain(plist)
+bn <- compile(bn)
 
+# save the model
+saveRDS(bn, file = "water_cycle.rds")
+
+# To read in the saved model
+bn <- readRDS("water_cycle.rdschest_ev.rds")
 
 # *****************************************
 # Using the model
 # *****************************************
 
 # Visualize the Network
-plot(bn)
+plot(bn$dag)
+
+# Inspecting the model
+plist$Evaporation %>% as.data.frame.table
+plist$Condensation %>% as.data.frame.table
+
 
 
 # Querying the Network
 ## Initial values for two nodes
-querygrain(bn, nodes = c("Evaporation", "Condensation"))
+querygrain(bn, nodes = c("SolarEnergy", "Evaporation"), type = "marginal")
+querygrain(bn, nodes = c("SolarEnergy", "Evaporation"), type = "joint")  %>% as.data.frame.table
 # Set evidences
 # Step 1: works as expected
-bn <- setEvidence(bn, nodes = "SolarEnergy", states = "not_understood")
-# Step 2: No effects, which is not what should happen.
+bn2 <- setEvidence(bn, nodes = "SolarEnergy", states = "not_understood")
+getEvidence(bn2)
+querygrain(bn2, nodes = c("Condensation", "Evaporation"), type = "marginal")
+pEvidence(bn2)
+
+bn3 <- retractEvidence(bn2)
+getEvidence(bn3)
+
+querygrain(bn3,  evidence=list(SolarEnergy="not_understood"),
+                              nodes=c("Condensation",  "Precipitation"),  type="marginal")
+
+querygrain(bn,  evidence=list(SolarEnergy="well_understood",
+                              Evaporation="partially_understood"),
+           nodes=c("Condensation",  "Precipitation"),
+           type="marginal")
+
+querygrain(bn,  evidence=list(SolarEnergy="well_understood",
+                              Evaporation="well_understood"),
+           nodes=c("Condensation",  "Precipitation"),
+           type="marginal")
+
+querygrain(bn,  evidence=list(Evaporation="not_understood"), nodes=c("Condensation",  "Precipitation"))
+
+querygrain(bn,  evidence=list(Evaporation="partially_understood"), nodes=c("Condensation",  "Precipitation"),  type="marginal")
+
+querygrain(bn,  evidence=list(Evaporation="well_understood"), nodes=c("Condensation",  "Precipitation"),  type="marginal")
+
+   ff# Step 2: No effects, which is not what should happen.
 bn <- setEvidence(bn, nodes = "SolarEnergy", states = "partially_understood")
 # Step 3: Works as expected for Condensation, but weirdly Evaporation is now NULL
 bn <- setEvidence(bn, nodes = "Evaporation", states = "well_understood")
